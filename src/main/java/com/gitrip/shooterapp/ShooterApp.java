@@ -38,8 +38,6 @@ public class ShooterApp extends GameApplication {
         settings.setIntroEnabled(false); //turn off intro
         settings.setMenuEnabled(true); //turn off menus
         settings.setEnabledMenuItems(EnumSet.of(MenuItem.ONLINE));
-
-
     }
 
     @Override
@@ -59,12 +57,9 @@ public class ShooterApp extends GameApplication {
                 .at(100,400)
                 .viewFromNode(new Rectangle(25,25,Color.RED))
                 .buildAndAttach(getGameWorld());
-        {
 
-        }
-        
         if (getNet().getConnection().isPresent()) {
-            player = getNet().getConnection().get() instanceof Server ? player : player2;
+            myPlayer = getNet().getConnection().get() instanceof Server ? player : player2;
         }
     }
 
