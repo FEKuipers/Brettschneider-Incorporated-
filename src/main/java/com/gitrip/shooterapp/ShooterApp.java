@@ -5,6 +5,7 @@ import com.almasb.fxgl.entity.Entities;
 import com.almasb.fxgl.entity.GameEntity;
 import com.almasb.fxgl.input.Input;
 import com.almasb.fxgl.input.UserAction;
+import com.almasb.fxgl.net.Server;
 import com.almasb.fxgl.settings.GameSettings;
 import com.almasb.fxgl.settings.MenuItem;
 import javafx.scene.input.KeyCode;
@@ -66,6 +67,10 @@ public class ShooterApp extends GameApplication {
 //        if(false){
         myPlayer = player;
 //        }else
+
+        if (getNet().getConnection().isPresent()) {
+            player = getNet().getConnection().get() instanceof Server ? player : player2;
+        }
     }
 
     @Override
