@@ -62,12 +62,7 @@ public class ShooterApp extends GameApplication {
         {
 
         }
-//            myPlayer = player2;
-//        }
-//        if(false){
-        myPlayer = player;
-//        }else
-
+        
         if (getNet().getConnection().isPresent()) {
             player = getNet().getConnection().get() instanceof Server ? player : player2;
         }
