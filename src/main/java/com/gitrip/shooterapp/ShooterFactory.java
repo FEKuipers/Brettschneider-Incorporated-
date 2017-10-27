@@ -25,7 +25,7 @@ public class ShooterFactory implements EntityFactory {
                 .type(ShooterType.BULLET)
                 .viewFromNodeWithBBox(new Rectangle(10, 2, Color.BLUE))
                 .with(new CollidableComponent(true))
-                .with(new ProjectileControl(new Point2D(0, -1), 50))
+                .with(new ProjectileControl(new Point2D(0, -1), 500))
                 .build();
     }
 

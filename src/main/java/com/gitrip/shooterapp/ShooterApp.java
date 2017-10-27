@@ -1,11 +1,15 @@
 package com.gitrip.shooterapp;
 
 import com.almasb.fxgl.app.GameApplication;
+import com.almasb.fxgl.ecs.Entity;
 import com.almasb.fxgl.entity.Entities;
 import com.almasb.fxgl.entity.GameEntity;
+import com.almasb.fxgl.entity.component.CollidableComponent;
 import com.almasb.fxgl.input.Input;
 import com.almasb.fxgl.input.UserAction;
 import com.almasb.fxgl.net.Server;
+import com.almasb.fxgl.physics.CollisionHandler;
+import com.almasb.fxgl.physics.PhysicsWorld;
 import com.almasb.fxgl.settings.GameSettings;
 import com.almasb.fxgl.settings.MenuItem;
 import javafx.scene.input.KeyCode;
@@ -15,6 +19,8 @@ import javafx.scene.shape.Rectangle;
 
 import java.util.EnumSet;
 import java.util.Map;
+
+import static com.gitrip.shooterapp.ShooterType.PLAYER;
 
 
 public class ShooterApp extends GameApplication {
@@ -50,13 +56,19 @@ public class ShooterApp extends GameApplication {
     protected void initGame(){
         player = Entities.builder()
                 .at(300,300)
+                .type(PLAYER)
+                .with(new CollidableComponent(true))
                 .viewFromNode(new Rectangle(25,25, Color.BLUE))
                 .buildAndAttach(getGameWorld());
 
         player2 = Entities.builder()
                 .at(100,400)
+                .type(PLAYER)
+                .with(new CollidableComponent(true))
                 .viewFromNode(new Rectangle(25,25,Color.RED))
                 .buildAndAttach(getGameWorld());
+
+        myPlayer = player;
 
         if (getNet().getConnection().isPresent()) {
             myPlayer = getNet().getConnection().get() instanceof Server ? player : player2;
@@ -103,4 +115,16 @@ public class ShooterApp extends GameApplication {
 
     }
 
+    @Override
+    protected void initPhysics() {
+        PhysicsWorld physicsWorld = getPhysicsWorld();
+
+        physicsWorld.addCollisionHandler(new CollisionHandler(ShooterType.BULLET, PLAYER) {
+            @Override
+            protected void onCollisionBegin(Entity bullet, Entity player2) {
+                bullet.removeFromWorld();
+                player2.removeFromWorld();
+            }
+        });
+    }
 }
