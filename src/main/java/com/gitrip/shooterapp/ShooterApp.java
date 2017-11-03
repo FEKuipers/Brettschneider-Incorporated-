@@ -1,6 +1,7 @@
 package com.gitrip.shooterapp;
 
 import com.almasb.fxgl.app.GameApplication;
+import com.almasb.fxgl.core.math.FXGLMath;
 import com.almasb.fxgl.ecs.Entity;
 import com.almasb.fxgl.entity.Entities;
 import com.almasb.fxgl.entity.GameEntity;
@@ -9,6 +10,7 @@ import com.almasb.fxgl.input.Input;
 import com.almasb.fxgl.input.UserAction;
 import com.almasb.fxgl.net.Server;
 import com.almasb.fxgl.physics.CollisionHandler;
+import com.almasb.fxgl.physics.PhysicsParticleControl;
 import com.almasb.fxgl.physics.PhysicsWorld;
 import com.almasb.fxgl.settings.GameSettings;
 import com.almasb.fxgl.settings.MenuItem;
@@ -16,11 +18,14 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 import java.util.EnumSet;
 import java.util.Map;
 
+import static com.gitrip.shooterapp.ShooterType.ENEMY;
 import static com.gitrip.shooterapp.ShooterType.PLAYER;
+import static com.gitrip.shooterapp.ShooterType.PLAYER2;
 
 
 public class ShooterApp extends GameApplication {
@@ -35,7 +40,7 @@ public class ShooterApp extends GameApplication {
 
     @Override
     protected void initSettings(GameSettings settings){
-        settings.setWidth(600);
+        settings.setWidth(800);
         settings.setHeight(600);
         settings.setTitle("Simple Game App");
         settings.setVersion("0.1");
@@ -63,7 +68,7 @@ public class ShooterApp extends GameApplication {
 
         player2 = Entities.builder()
                 .at(100,400)
-                .type(PLAYER)
+                .type(PLAYER2)
                 .with(new CollidableComponent(true))
                 .viewFromNode(new Rectangle(25,25,Color.RED))
                 .buildAndAttach(getGameWorld());
@@ -73,6 +78,22 @@ public class ShooterApp extends GameApplication {
         if (getNet().getConnection().isPresent()) {
             myPlayer = getNet().getConnection().get() instanceof Server ? player : player2;
         }
+
+        getMasterTimer().runAtInterval(() -> {
+
+            int numEnemies = getGameState().getInt("enemies");
+
+            if (numEnemies < 5) {
+                getGameWorld().spawn("Enemy",
+                        FXGLMath.random(0, getWidth() - 40),
+                        FXGLMath.random(0, getHeight() / 2 - 40)
+                );
+
+                getGameState().increment("enemies", +1);
+            }
+
+        }, Duration.seconds(1));
+
     }
 
     @Override
@@ -119,11 +140,11 @@ public class ShooterApp extends GameApplication {
     protected void initPhysics() {
         PhysicsWorld physicsWorld = getPhysicsWorld();
 
-        physicsWorld.addCollisionHandler(new CollisionHandler(ShooterType.BULLET, PLAYER) {
+        physicsWorld.addCollisionHandler(new CollisionHandler(ShooterType.BULLET, ENEMY) {
             @Override
-            protected void onCollisionBegin(Entity bullet, Entity player2) {
+            protected void onCollisionBegin(Entity bullet, Entity enemy) {
                 bullet.removeFromWorld();
-                player2.removeFromWorld();
+                enemy.removeFromWorld();
             }
         });
     }
