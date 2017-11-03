@@ -8,20 +8,21 @@ import com.almasb.fxgl.input.UserAction;
 import com.almasb.fxgl.net.Server;
 import com.almasb.fxgl.settings.GameSettings;
 import com.almasb.fxgl.settings.MenuItem;
+import javafx.application.Platform;
+import javafx.geometry.Point2D;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
 import java.util.EnumSet;
-import java.util.Map;
 
 
 public class ShooterApp extends GameApplication {
 
-    private GameEntity player;
-    private GameEntity player2;
+    private GameEntity serverPlayer;
+    private GameEntity clientPlayer;
     private GameEntity myPlayer;
+    private KeepRunning keepRunning;
 
     public static void main(String... args){
         launch(args);
@@ -38,30 +39,63 @@ public class ShooterApp extends GameApplication {
         settings.setIntroEnabled(false); //turn off intro
         settings.setMenuEnabled(true); //turn off menus
         settings.setEnabledMenuItems(EnumSet.of(MenuItem.ONLINE));
+
     }
 
     @Override
-    protected void initGameVars(Map<String, Object> vars) {
-        vars.put("enemies", 0);
+    protected void preInit() {
+        getNet().addDataParser(TestMessage.class, message -> {
+            System.out.println("receiving a test message");
+            Platform.runLater(() -> {
+                if (myPlayer != null) {
+                    myPlayer.setPosition(new Point2D(myPlayer.getPosition().getX() + 2, myPlayer.getPosition().getY() + 2));
+                    System.out.println("Getting input");
+                }else {
+                    System.err.println("PLAYER IS NULL");
+                }
+            });
+        });
 
+        addExitListener(() -> {
+            getNet().getConnection().ifPresent(conn -> {
+                conn.close();
+
+                if(keepRunning != null) {
+                    keepRunning.setKeepRunning(false);
+                }
+
+                System.out.println("Stopping server logic!");
+            });
+        });
     }
 
     @Override
     protected void initGame(){
-        player = Entities.builder()
+        serverPlayer = Entities.builder()
                 .at(300,300)
                 .viewFromNode(new Rectangle(25,25, Color.BLUE))
                 .buildAndAttach(getGameWorld());
 
-        player2 = Entities.builder()
+        clientPlayer = Entities.builder()
                 .at(100,400)
                 .viewFromNode(new Rectangle(25,25,Color.RED))
                 .buildAndAttach(getGameWorld());
 
         if (getNet().getConnection().isPresent()) {
-            myPlayer = getNet().getConnection().get() instanceof Server ? player : player2;
+            myPlayer = getNet().getConnection().get() instanceof Server ? serverPlayer : clientPlayer;
+        }else {
+            System.out.println("The game is started in single-player mode");
+            myPlayer = serverPlayer;
+        }
+
+        if(myPlayer == serverPlayer) {
+            keepRunning = new KeepRunning();
+
+            Thread thread = new Thread(new ServerHandler(keepRunning, getNet()));
+            thread.start();
         }
     }
+
 
     @Override
     protected void initInput(){
@@ -102,5 +136,4 @@ public class ShooterApp extends GameApplication {
         }, KeyCode.C);
 
     }
-
 }
