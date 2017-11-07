@@ -16,7 +16,7 @@ public class ServerHandler implements Runnable{
         while(keepRunning.doI()) {
             System.out.println("Running server");
             net.getConnection().ifPresent(conn -> {
-                conn.send(new TestMessage());
+                //conn.send(new TestMessage());
             });
 
             try {
