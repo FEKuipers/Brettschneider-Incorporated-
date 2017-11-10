@@ -8,6 +8,7 @@ import com.almasb.fxgl.input.UserAction;
 import com.almasb.fxgl.net.Server;
 import com.almasb.fxgl.settings.GameSettings;
 import com.almasb.fxgl.settings.MenuItem;
+import com.gitrip.shooterapp.message.Message;
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.input.KeyCode;
@@ -22,7 +23,8 @@ public class ShooterApp extends GameApplication {
     private GameEntity serverPlayer;
     private GameEntity clientPlayer;
     private GameEntity myPlayer;
-    private KeepRunning keepRunning;
+    private Messenger messenger;
+    private ClientStateBroadcaster broadcaster;
 
     public static void main(String... args){
         launch(args);
@@ -44,28 +46,11 @@ public class ShooterApp extends GameApplication {
 
     @Override
     protected void preInit() {
-        getNet().addDataParser(TestMessage.class, message -> {
-            System.out.println("receiving a test message");
-            Platform.runLater(() -> {
-                if (myPlayer != null) {
-                    myPlayer.setPosition(new Point2D(myPlayer.getPosition().getX() + 2, myPlayer.getPosition().getY() + 2));
-                    System.out.println("Getting input");
-                }else {
-                    System.err.println("PLAYER IS NULL");
-                }
-            });
-        });
-
         addExitListener(() -> {
-            getNet().getConnection().ifPresent(conn -> {
-                conn.close();
-
-                if(keepRunning != null) {
-                    keepRunning.setKeepRunning(false);
-                }
-
-                System.out.println("Stopping server logic!");
-            });
+            if(messenger != null && broadcaster != null) {
+                broadcaster.stopBroadcasting();
+                messenger.stopMessenger();
+            }
         });
     }
 
@@ -83,16 +68,14 @@ public class ShooterApp extends GameApplication {
 
         if (getNet().getConnection().isPresent()) {
             myPlayer = getNet().getConnection().get() instanceof Server ? serverPlayer : clientPlayer;
+            ClientState state = new ClientState(serverPlayer, clientPlayer, myPlayer);
+            ClientHandler clientHandler = new ClientHandler(state);
+            messenger = new Messenger(getNet().getConnection(), clientHandler, null);
+            broadcaster = new ClientStateBroadcaster(state, messenger);
+            new Thread(broadcaster).start();
         }else {
             System.out.println("The game is started in single-player mode");
             myPlayer = serverPlayer;
-        }
-
-        if(myPlayer == serverPlayer) {
-            keepRunning = new KeepRunning();
-
-            Thread thread = new Thread(new ServerHandler(keepRunning, getNet()));
-            thread.start();
         }
     }
 
