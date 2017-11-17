@@ -23,7 +23,7 @@ public class ClientStateBroadcaster implements Runnable{
             String playerstring = clientState.getClientPlayer() == clientState.getMe() ? "client" : "server";
             messenger.sendMessage(new RepositionMessage(playerstring, clientState.getMe().getX(), clientState.getMe().getY()));
             try {
-                Thread.sleep(500);
+                Thread.sleep(12);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

@@ -17,7 +17,7 @@ public class Messenger {
         this.clientHandler = clientHandler;
         this.serverHandler = serverHandler;
 
-        connection.get().addParser(RepositionMessage.class, e -> clientHandler.handleRepositionMessage(e));
+        initializeParsers();
     }
 
     public final synchronized void sendMessage(Message message) {
